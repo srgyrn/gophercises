@@ -28,31 +28,29 @@ func Start() {
 	}
 	questions := csv.NewReader(bufio.NewReader(csvFile))
 
-	go askQuestion(questions)
+	go func() {
+		defer wg.Done()
+
+		for {
+			question, err := questions.Read()
+
+			if !errors.Is(err, nil) {
+				break
+			}
+
+			fmt.Printf("What %s is? ", question[0])
+			answer, _ := buf.ReadString('\n')
+
+			if strings.TrimSpace(answer) == strings.TrimSpace(question[1]) {
+				score++
+			} else {
+				wrongAnswers++
+			}
+		}
+	}()
 	wg.Wait()
 
 	fmt.Printf("Your score: %d. Questions answered wrong: %d", score, wrongAnswers)
-}
-
-func askQuestion(questions *csv.Reader) {
-	defer wg.Done()
-
-	for {
-		question, err := questions.Read()
-
-		if !errors.Is(err, nil) {
-			break
-		}
-
-		fmt.Printf("What %s is? ", question[0])
-		answer, _ := buf.ReadString('\n')
-
-		if strings.TrimSpace(answer) == strings.TrimSpace(question[1]) {
-			score++
-		} else {
-			wrongAnswers++
-		}
-	}
 }
 
 func timer() {
