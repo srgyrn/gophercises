@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sync"
 	"strings"
+	"sync"
 )
 
 var (
