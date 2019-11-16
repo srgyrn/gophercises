@@ -12,7 +12,6 @@ import (
 
 var (
 	score int
-	wrongAnswers int
 	wg sync.WaitGroup
 	buf *bufio.Reader
 )
@@ -26,31 +25,27 @@ func Start() {
 	if !errors.Is(err, nil) {
 		fmt.Println(err, workingDir)
 	}
-	questions := csv.NewReader(bufio.NewReader(csvFile))
+	questions, err := csv.NewReader(bufio.NewReader(csvFile)).ReadAll()
+
+	if !errors.Is(err, nil) {
+		fmt.Print("cannot read questions from file")
+	}
 
 	go func() {
 		defer wg.Done()
 
-		for {
-			question, err := questions.Read()
-
-			if !errors.Is(err, nil) {
-				break
-			}
-
+		for _, question := range questions {
 			fmt.Printf("What %s is? ", question[0])
 			answer, _ := buf.ReadString('\n')
 
 			if strings.TrimSpace(answer) == strings.TrimSpace(question[1]) {
 				score++
-			} else {
-				wrongAnswers++
 			}
 		}
 	}()
 	wg.Wait()
 
-	fmt.Printf("Your score: %d. Questions answered wrong: %d", score, wrongAnswers)
+	fmt.Printf("Your scored %d out of %d.", score, len(questions))
 }
 
 func timer() {
