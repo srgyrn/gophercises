@@ -11,34 +11,29 @@ import (
 	"sync"
 )
 
-var (
-	score int
-	wg    sync.WaitGroup
-	buf   *bufio.Reader
-)
-
 func Start() {
-	workingDir, _ := os.Getwd()
-	csvFile, err := os.Open(workingDir + "/quissdfz/problems.csv")
-
-	flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
+	csvFileName := flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
 	flag.Int("limit", 30, "the time limit for the quiz in seconds")
 	flag.Parse()
 
+	workingDir, _ := os.Getwd()
+	csvFile, err := os.Open(workingDir + "/quiz/" + *csvFileName)
+
+	var buf *bufio.Reader
 	buf = bufio.NewReader(os.Stdin)
 	if !errors.Is(err, nil) {
-		fmt.Printf("problems.csv not found in %s/quiz/\nError: %v", workingDir, err)
-		os.Exit(1)
+		exit(fmt.Sprintf("%s not found in %s/quiz/\nError: %v", *csvFileName, workingDir, err))
 	}
 
 	questions, err := csv.NewReader(bufio.NewReader(csvFile)).ReadAll()
 
 	if !errors.Is(err, nil) {
-		fmt.Print("cannot read questions from file")
+		exit("cannot read questions from file")
 	}
-
+	var wg sync.WaitGroup
 	wg.Add(1)
 
+	var score int
 	go func() {
 		defer wg.Done()
 
@@ -56,6 +51,7 @@ func Start() {
 	fmt.Printf("Your scored %d out of %d.", score, len(questions))
 }
 
-func timer() {
-
+func exit(message string) {
+	fmt.Print(message)
+	os.Exit(1)
 }
