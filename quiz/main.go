@@ -32,6 +32,8 @@ func Start() {
 	timer := time.NewTimer(time.Duration(*limit) * time.Second)
 
 	var score int
+
+problemLoop:
 	for _, question := range questions {
 		fmt.Printf("What %s is? ", question[0])
 		answerCh := make(chan string)
@@ -44,8 +46,8 @@ func Start() {
 
 		select {
 		case <-timer.C:
-			fmt.Printf("\nTime's up! Your scored %d out of %d.", score, len(questions))
-			return
+			fmt.Print("\nTime's up!\n")
+			break problemLoop
 		case answer := <-answerCh:
 			if answer == strings.TrimSpace(question[1]) {
 				score++
