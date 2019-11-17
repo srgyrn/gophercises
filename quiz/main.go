@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/csv"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -12,24 +13,31 @@ import (
 
 var (
 	score int
-	wg sync.WaitGroup
-	buf *bufio.Reader
+	wg    sync.WaitGroup
+	buf   *bufio.Reader
 )
 
 func Start() {
 	workingDir, _ := os.Getwd()
-	csvFile, err := os.Open(workingDir+"/quiz/problems.csv")
-	wg.Add(1)
-	buf = bufio.NewReader(os.Stdin)
+	csvFile, err := os.Open(workingDir + "/quissdfz/problems.csv")
 
+	flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
+	flag.Int("limit", 30, "the time limit for the quiz in seconds")
+	flag.Parse()
+
+	buf = bufio.NewReader(os.Stdin)
 	if !errors.Is(err, nil) {
-		fmt.Println(err, workingDir)
+		fmt.Printf("problems.csv not found in %s/quiz/\nError: %v", workingDir, err)
+		os.Exit(1)
 	}
+
 	questions, err := csv.NewReader(bufio.NewReader(csvFile)).ReadAll()
 
 	if !errors.Is(err, nil) {
 		fmt.Print("cannot read questions from file")
 	}
+
+	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
