@@ -1,7 +1,7 @@
 package urlshortener
 
 import (
-"net/http"
+	"net/http"
 )
 
 // MapHandler will return an http.HandlerFunc (which also
