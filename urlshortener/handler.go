@@ -1,8 +1,15 @@
 package urlshortener
 
 import (
+	"errors"
+	"github.com/go-yaml/yaml"
 	"net/http"
 )
+
+type yamlLine struct {
+	Path string `yaml:"path"`
+	Url string `yamlL:"url"`
+}
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -39,6 +46,24 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // See MapHandler to create a similar http.HandlerFunc via
 // a mapping of paths to urls.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	// TODO: Implement this...
-	return nil, nil
+	var routes []yamlLine
+	err := yaml.Unmarshal(yml, &routes)
+
+	if !errors.Is(err, nil) {
+		return nil, err
+	}
+
+	return MapHandler(buildMap(routes), fallback), nil
+}
+
+
+// buildMap takes a slice of yamlLine and converts it to a map
+func buildMap(routes []yamlLine) map[string]string {
+	routeMap := make(map[string]string)
+
+	for _, line := range routes {
+		routeMap[line.Path] = line.Url
+	}
+
+	return routeMap
 }
