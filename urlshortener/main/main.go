@@ -46,6 +46,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 func getRoutesFromFile(extension string) []byte {
 	filePath := "./routes/routing."+extension
 	file, err := os.Open(filePath)
+	defer file.Close()
 	checkErrorAndExit(err, "file not found | " + filePath)
 
 	output, err := ioutil.ReadAll(bufio.NewReader(file))
