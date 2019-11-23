@@ -13,14 +13,14 @@ import (
 
 func main() {
 	csvFileName := flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
-	limit := flag.Int("limit", 30, "the time limit for the quiz in seconds")
+	limit := flag.Int("limit", 3, "the time limit for the quiz in seconds")
 	flag.Parse()
 
 	workingDir, _ := os.Getwd()
-	csvFile, err := os.Open(workingDir + "/quiz/" + *csvFileName)
+	csvFile, err := os.Open( *csvFileName)
 
 	if !errors.Is(err, nil) {
-		exit(fmt.Sprintf("%s not found in %s/quiz/\nError: %v", *csvFileName, workingDir, err))
+		exit(fmt.Sprintf("%s not found in %s\nError: %v", *csvFileName, workingDir, err))
 	}
 
 	questions, err := csv.NewReader(bufio.NewReader(csvFile)).ReadAll()
