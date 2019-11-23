@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,22 +9,30 @@ import (
 	"os"
 
 	"github.com/srgyrn/gophercises/urlshortener"
+	"github.com/srgyrn/gophercises/urlshortener/storage"
 )
 
 func main() {
+	storage.InitDB()
+	defer storage.Conn.CloseConnection()
 	mux := defaultMux()
-	// Build the MapHandler using the mux as the fallback
-	pathsToUrls := map[string]string{
-		"/urlshort-godoc": "https://godoc.org/github.com/gophercises/urlshort",
-		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
-	}
-	mapHandler := urlshortener.MapHandler(pathsToUrls, mux)
+
+	// Add default data to BoltDB
+	storage.Conn.AddRoute(storage.RouteData{
+		Path: "/urlshort-godoc",
+		Url:  "https://godoc.org/github.com/gophercises/urlshort",
+	})
+	storage.Conn.AddRoute(storage.RouteData{
+		Path: "/yaml-godoc",
+		Url:  "https://godoc.org/gopkg.in/yaml.v2",
+	})
+
+	mainHandler := urlshortener.MainHandler(mux)
 
 	extension := flag.String("file", "json", "File extension (yaml, json)")
 	flag.Parse()
 
-
-	handler, err := getHandler(*extension, mapHandler)
+	handler, err := getHandler(*extension, mainHandler)
 	if err != nil {
 		panic(err)
 	}
@@ -44,22 +51,15 @@ func hello(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRoutesFromFile(extension string) []byte {
-	filePath := "./routes/routing."+extension
-	file, err := os.Open(filePath)
-	defer file.Close()
-	checkErrorAndExit(err, "file not found | " + filePath)
+	filePath := "./routes/routing." + extension
+	output, err := ioutil.ReadFile(filePath)
 
-	output, err := ioutil.ReadAll(bufio.NewReader(file))
-	checkErrorAndExit(err, "failed at reading file")
-
-	return output
-}
-
-func checkErrorAndExit(err error, message string) {
 	if !errors.Is(err, nil) {
-		fmt.Println("Error: "+message)
+		fmt.Println("Error: " + fmt.Sprintf("failed at reading file at %s", filePath))
 		os.Exit(1)
 	}
+
+	return output
 }
 
 func getHandler(fileType string, fallback http.HandlerFunc) (http.HandlerFunc, error) {

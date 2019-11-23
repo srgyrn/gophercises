@@ -3,14 +3,12 @@ package urlshortener
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/go-yaml/yaml"
 	"net/http"
-)
 
-type routeData struct {
-	Path string `yaml:"path" json:"path"`
-	Url string `yaml:"url" json:"url"`
-}
+	"github.com/srgyrn/gophercises/urlshortener/storage"
+)
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -47,14 +45,16 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // See MapHandler to create a similar http.HandlerFunc via
 // a mapping of paths to urls.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	var routes []routeData
+	var routes []storage.RouteData
 	err := yaml.Unmarshal(yml, &routes)
 
 	if !errors.Is(err, nil) {
 		return nil, err
 	}
 
-	return MapHandler(buildMap(routes), fallback), nil
+	addRoutes(routes)
+
+	return MainHandler(fallback), nil
 }
 
 // JSONHandler will parse the provided JSON and then return
@@ -74,19 +74,33 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 // See MapHandler to create a similar http.HandlerFunc via
 // a mapping of paths to urls.
 func JSONHandler(jsn []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	var routes []routeData
+	var routes []storage.RouteData
 	err := json.Unmarshal(jsn, &routes)
 
 	if !errors.Is(err, nil) {
 		return nil, err
 	}
+	addRoutes(routes)
 
-	return MapHandler(buildMap(routes), fallback), nil
+	return MainHandler(fallback), nil
 }
 
+// MainHandler searches the path in BoltDB and return redirects to the result url
+func MainHandler(fallback http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		url, err := storage.Conn.GetRoute(path)
+
+		if !errors.Is(err, nil) {
+			fallback.ServeHTTP(w, r)
+		}
+
+		http.Redirect(w, r, url, http.StatusFound)
+	}
+}
 
 // buildMap takes a slice of routeData and converts it to a map
-func buildMap(routes []routeData) map[string]string {
+func buildMap(routes []storage.RouteData) map[string]string {
 	routeMap := make(map[string]string)
 
 	for _, line := range routes {
@@ -94,4 +108,15 @@ func buildMap(routes []routeData) map[string]string {
 	}
 
 	return routeMap
+}
+
+// addRoutes adds the new routes to BoltDB
+func addRoutes(routes []storage.RouteData) {
+	for _, route := range routes {
+		err := storage.Conn.AddRoute(route)
+
+		if !errors.Is(err, nil) {
+			fmt.Printf("failed to add route: %v", route)
+		}
+	}
 }
