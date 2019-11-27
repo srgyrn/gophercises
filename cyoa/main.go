@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"html/template"
 	"io/ioutil"
 	"log"
-	"fmt"
 	"net/http"
 )
 
@@ -20,21 +20,33 @@ type chapter struct {
 }
 
 func main() {
-	buildBook()
+	book := buildBook()
 
-	http.ListenAndServe(":8080", func(w http.ResponseWriter, r *http.Request) http.HandlerFunc {}())
+	tmpl := template.Must(template.New("index").ParseFiles([]string{"index.tmpl"}...))
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		option, ok := r.URL.Query()["option"]
+		data := book["intro"]
+
+		if ok {
+			data = book[option[0]]
+		}
+
+		handleError(tmpl.Execute(w, data))
+	})
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func buildBook() {
+func buildBook() map[string]chapter {
 	file, err := ioutil.ReadFile("./adventure.json")
 	handleError(err)
 
-	bookMap := make(map[string]chapter)
-	err = json.Unmarshal(file, &bookMap)
+	var book map[string]chapter
+	err = json.Unmarshal(file, &book)
 	handleError(err)
 
-	fmt.Print(bookMap)
-
+	return book
 }
 
 func handleError(err error) {
@@ -42,10 +54,3 @@ func handleError(err error) {
 		log.Fatal(err)
 	}
 }
-
-func handlerFunc {
-
-}
-
-
-
