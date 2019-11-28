@@ -6,7 +6,7 @@
     <h2>{{.Title}}</h2>
     <p>{{.Story}}</p>
 
-    {{range .Option}}
+    {{range .Options}}
         <p>[<a href="/cyoa/?option={{.Arc}}">{{.Text}}</a>]</p>
     {{end}}
 </body>

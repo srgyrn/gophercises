@@ -22,7 +22,7 @@ type chapter struct {
 func main() {
 	book := buildBook()
 
-	tmpl := template.Must(template.New("index").ParseFiles([]string{"index.tmpl"}...))
+	tmpl := template.Must(template.ParseFiles([]string{"index.tmpl"}...))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		option, ok := r.URL.Query()["option"]
