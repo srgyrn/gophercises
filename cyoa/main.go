@@ -19,23 +19,16 @@ type chapter struct {
 	Options []options `json:"options"`
 }
 
+type storyData struct {
+	book map[string]chapter
+	tpl *template.Template
+}
+
 func main() {
-	book := buildBook()
-
 	tmpl := template.Must(template.ParseFiles([]string{"index.tmpl"}...))
+	defaultHandler := defaultMux(storyData{buildBook(), tmpl})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		option, ok := r.URL.Query()["option"]
-		data := book["intro"]
-
-		if ok {
-			data = book[option[0]]
-		}
-
-		handleError(tmpl.Execute(w, data))
-	})
-
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", defaultHandler))
 }
 
 func buildBook() map[string]chapter {
@@ -53,4 +46,23 @@ func handleError(err error) {
 	if !errors.Is(err, nil) {
 		log.Fatal(err)
 	}
+}
+
+func defaultMux(storyData storyData) http.Handler {
+	mux := http.NewServeMux()
+	handler := 	func() http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			option, ok := r.URL.Query()["option"]
+			data := storyData.book["intro"]
+
+			if ok {
+				data = storyData.book[option[0]]
+			}
+
+			handleError(storyData.tpl.Execute(w, data))
+		}
+	}()
+	mux.Handle("/", handler)
+
+	return mux
 }
