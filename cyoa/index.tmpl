@@ -1,0 +1,13 @@
+<html>
+<head>
+    <title>Choose Your Own Adventure</title>
+</head>
+<body>
+    <h2>{{.Title}}</h2>
+    <p>{{.Story}}</p>
+
+    {{range .Options}}
+        <p>[<a href="/cyoa/?option={{.Arc}}">{{.Text}}</a>]</p>
+    {{end}}
+</body>
+</html>
