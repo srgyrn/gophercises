@@ -30,28 +30,15 @@ func (ht HTML) Parse() (*html.Node, error) {
 	return node, nil
 }
 
-//TODO: find anchors
-
-
-var linkSlice []Link
-
-
 func FindLinks(node *html.Node) []Link {
-	for {
-		if node.Type == html.ElementNode && node.Data == "a" {
-			link := Link{Text: node.FirstChild.Data, Link: node.Attr[0].Val}
-			linkSlice = append(linkSlice, link)
-			return linkSlice
-		}
+	if node.Type == html.ElementNode && node.Data == "a" {
+		return []Link{{Text: node.FirstChild.Data, Link: node.Attr[0].Val}}
+	}
 
-		nextNode := node.NextSibling
-		if nextNode == nil {
-			nextNode = node.FirstChild
-		}
+	var linkSlice []Link
 
-		FindLinks(nextNode)
-
-		break
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
+		linkSlice = append(linkSlice, FindLinks(c)...)
 	}
 
 	return linkSlice

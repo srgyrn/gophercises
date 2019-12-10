@@ -17,7 +17,6 @@ func main() {
 	t, err := ht.Parse()
 	checkErrorAndExit(err)
 
-
 	fmt.Println(link.FindLinks(t))
 }
 
